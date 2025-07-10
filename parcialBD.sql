@@ -53,6 +53,20 @@ AS
 
         --Inserción masiva
         INSERT INTO productos_juntos(prod_detalle1, prod_detalle2, cantidad)
-        SELECT FROM
+        SELECT p1.prod_detalle, p2.prod_detalle, COUNT(DISTINCT it1.item_numero + it1.item_sucursal + it1.item_tipo) 
+        FROM Producto p1 JOIN Producto p2 ON p2.prod_codigo < p1.prod_codigo
+        JOIN Item_Factura it1  ON it1.item_producto = p1.prod_codigo
+        JOIN Item_Factura it2  ON it2.item_producto = p2.prod_codigo
+        WHERE IT1.item_numero = it2.item_numero AND it2.item_sucursal = it1.item_sucursal
+        AND it1.item_tipo = it2.item_tipo
+        GROUP BY p1.prod_codigo, p1.prod_detalle, p2.prod_codigo, p2.prod_detalle
+
+        SET @cantidad_filas = (SELECT COUNT(*) FROM productos_juntos) 
     END
 GO
+
+-- Ejecución 
+BEGIN TRAN
+    declare @cantidad_filas INT
+    EXEC llenar_tabla @cantidad_filas
+COMMIT
