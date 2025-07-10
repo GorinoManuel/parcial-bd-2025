@@ -1,27 +1,26 @@
 --Punto 1
 SELECT  
-    YEAR(f.fact_fecha),
-    p.prod_codigo,
+    YEAR(f.fact_fecha) as 'AÑO',
+    p.prod_codigo as 'Producto con composición más vendido',
     (SELECT COUNT(DISTINCT f3.fact_numero + f3.fact_sucursal + f3.fact_tipo) FROM Item_Factura it3 JOIN Factura f3 ON f3.fact_numero + f3.fact_sucursal + f3.fact_tipo
             = it3.item_numero + it3.item_sucursal + it3.item_tipo
         WHERE it3.item_producto = p.prod_codigo AND it3.item_cantidad = 1  AND YEAR(f3.fact_fecha) = YEAR(f.fact_fecha)
-    ),
+    ) as 'Cantidad de facturas del producto ese año con cantidad igual a 1',
     (SELECT TOP 1 f3.fact_numero FROM Item_Factura it3 JOIN Factura f3 ON f3.fact_numero + f3.fact_sucursal + f3.fact_tipo
             = it3.item_numero + it3.item_sucursal + it3.item_tipo
         WHERE it3.item_producto = p.prod_codigo AND YEAR(f3.fact_fecha) = YEAR(f.fact_fecha)
         ORDER BY f3.fact_fecha asc
-    ),
+    ) as 'Numero de la factura más vieja',
     (SELECT TOP 1 f3.fact_cliente FROM Item_Factura it3 JOIN Factura f3 ON f3.fact_numero + f3.fact_sucursal + f3.fact_tipo
             = it3.item_numero + it3.item_sucursal + it3.item_tipo
         WHERE it3.item_producto = p.prod_codigo AND YEAR(f3.fact_fecha) = YEAR(f.fact_fecha)
         GROUP BY f3.fact_cliente
         ORDER BY SUM(it3.item_cantidad) asc
-    ),
+    ) as 'Cliente que más compro ese producto',
     ROUND ( (SUM(it.item_cantidad) * 100)/ (SELECT sum(IT3.item_cantidad) FROM Item_Factura it3 JOIN Factura f3 ON f3.fact_numero + f3.fact_sucursal + f3.fact_tipo
             = it3.item_numero + it3.item_sucursal + it3.item_tipo
         WHERE YEAR(f3.fact_fecha) = YEAR(f.fact_fecha)
-    ), 2)
-
+    ), 2) as '% de ventas con respecto al total del año en cantidades'
 FROM Producto p JOIN Item_Factura it on IT.item_producto = P.prod_codigo
 JOIN Factura f on f.fact_numero + f.fact_sucursal + f.fact_tipo
 = it.item_numero + it.item_sucursal + it.item_tipo
@@ -45,7 +44,7 @@ CREATE TABLE productos_juntos(
 )
 GO
 
-CREATE PROCEDURE llenar_tabla(@cantidad_filas INT OUTPUT)
+CREATE OR ALTER PROCEDURE llenar_tabla(@cantidad_filas INT OUTPUT)
 AS
     BEGIN
         -- Por si esta ya llena la tabla, la borro
@@ -53,7 +52,7 @@ AS
 
         --Inserción masiva
         INSERT INTO productos_juntos(prod_detalle1, prod_detalle2, cantidad)
-        SELECT p1.prod_detalle, p2.prod_detalle, COUNT(DISTINCT it1.item_numero + it1.item_sucursal + it1.item_tipo) 
+        SELECT  p1.prod_detalle, p2.prod_detalle, COUNT(DISTINCT it1.item_numero + it1.item_sucursal + it1.item_tipo) 
         FROM Producto p1 JOIN Producto p2 ON p2.prod_codigo < p1.prod_codigo
         JOIN Item_Factura it1  ON it1.item_producto = p1.prod_codigo
         JOIN Item_Factura it2  ON it2.item_producto = p2.prod_codigo
@@ -65,8 +64,10 @@ AS
     END
 GO
 
--- Ejecución 
+-- Ejecución de ejempl
 BEGIN TRAN
     declare @cantidad_filas INT
     EXEC llenar_tabla @cantidad_filas
+    print 'Se llenó con una cantidad de filas igual a: ' + str(@cantidad_filas)
 COMMIT
+
