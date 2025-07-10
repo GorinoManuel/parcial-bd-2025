@@ -2,7 +2,7 @@
 SELECT  
     YEAR(f.fact_fecha) as 'AÑO',
     p.prod_codigo as 'Producto con composición más vendido',
-    (SELECT COUNT(DISTINCT f3.fact_numero + f3.fact_sucursal + f3.fact_tipo) FROM Item_Factura it3 JOIN Factura f3 ON f3.fact_numero + f3.fact_sucursal + f3.fact_tipo
+    (SELECT ISNULL(COUNT(DISTINCT f3.fact_numero + f3.fact_sucursal + f3.fact_tipo), 0) FROM Item_Factura it3 JOIN Factura f3 ON f3.fact_numero + f3.fact_sucursal + f3.fact_tipo
             = it3.item_numero + it3.item_sucursal + it3.item_tipo
         WHERE it3.item_producto = p.prod_codigo AND it3.item_cantidad = 1  AND YEAR(f3.fact_fecha) = YEAR(f.fact_fecha)
     ) as 'Cantidad de facturas del producto ese año con cantidad igual a 1',
@@ -15,7 +15,7 @@ SELECT
             = it3.item_numero + it3.item_sucursal + it3.item_tipo
         WHERE it3.item_producto = p.prod_codigo AND YEAR(f3.fact_fecha) = YEAR(f.fact_fecha)
         GROUP BY f3.fact_cliente
-        ORDER BY SUM(it3.item_cantidad) asc
+        ORDER BY SUM(it3.item_cantidad) desc
     ) as 'Cliente que más compro ese producto',
     ROUND ( (SUM(it.item_cantidad) * 100)/ (SELECT sum(IT3.item_cantidad) FROM Item_Factura it3 JOIN Factura f3 ON f3.fact_numero + f3.fact_sucursal + f3.fact_tipo
             = it3.item_numero + it3.item_sucursal + it3.item_tipo
