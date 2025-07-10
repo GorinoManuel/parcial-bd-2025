@@ -44,9 +44,11 @@ CREATE TABLE productos_juntos(
 )
 GO
 
-CREATE OR ALTER PROCEDURE llenar_tabla(@cantidad_filas INT OUTPUT)
+CREATE OR ALTER PROCEDURE llenar_tabla( @cantidad_filas BIGINT OUTPUT)
 AS
     BEGIN
+        SET NOCOUNT ON;
+        SET TRANSACTION ISOLATION LEVEL SERIALIZABLE
         -- Por si esta ya llena la tabla, la borro
         DELETE FROM productos_juntos
 
@@ -60,14 +62,14 @@ AS
         AND it1.item_tipo = it2.item_tipo
         GROUP BY p1.prod_codigo, p1.prod_detalle, p2.prod_codigo, p2.prod_detalle
 
-        SET @cantidad_filas = (SELECT COUNT(*) FROM productos_juntos) 
+        SELECT @cantidad_filas = COUNT(*) FROM productos_juntos
     END
 GO
 
 -- Ejecución de ejempl
 BEGIN TRAN
-    declare @cantidad_filas INT
-    EXEC llenar_tabla @cantidad_filas
-    print 'Se llenó con una cantidad de filas igual a: ' + str(@cantidad_filas)
+    declare @cantidad_filas BIGINT 
+    EXEC llenar_tabla @cantidad_filas output
+    PRINT  concat('La cantidad de filas es ', @cantidad_filas) 
 COMMIT
 
